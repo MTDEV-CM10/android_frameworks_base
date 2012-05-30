@@ -377,12 +377,16 @@ public class CdmaServiceStateTracker extends ServiceStateTracker {
 
             if (ar.exception == null) {
                 String cdmaSubscription[] = (String[])ar.result;
-                if (cdmaSubscription != null && cdmaSubscription.length >= 5) {
+                if (cdmaSubscription != null && cdmaSubscription.length >= 4) {
                     mMdn = cdmaSubscription[0];
                     parseSidNid(cdmaSubscription[1], cdmaSubscription[2]);
 
                     mMin = cdmaSubscription[3];
-                    mPrlVersion = cdmaSubscription[4];
+                    String prl = SystemProperties.get("ro.telephony.ril_prl");
+                    if ((prl != null) || (cdmaSubscription.length == 4))
+                        mPrlVersion = prl;
+                    else
+                        mPrlVersion = cdmaSubscription[4];
                     if (DBG) log("GET_CDMA_SUBSCRIPTION: MDN=" + mMdn);
 
                     mIsMinInfoReady = true;
@@ -951,10 +955,6 @@ public class CdmaServiceStateTracker extends ServiceStateTracker {
                 // Now the CDMAPhone sees the new ServiceState so it can get the new ERI text
                 if (ss.getState() == ServiceState.STATE_IN_SERVICE) {
                     eriText = phone.getCdmaEriText();
-                } else if (ss.getState() == ServiceState.STATE_POWER_OFF) {
-                    // We're in Airplane Mode
-                    eriText = phone.getContext().getText(
-                            com.android.internal.R.string.roamingTextAirplaneMode).toString();
                 } else {
                     // Note that ServiceState.STATE_OUT_OF_SERVICE is valid used for
                     // mRegistrationState 0,2,3 and 4
