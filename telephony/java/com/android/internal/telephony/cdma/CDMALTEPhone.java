@@ -88,18 +88,11 @@ public class CDMALTEPhone extends CDMAPhone {
 
     @Override
     protected void initSstIcc() {
-<<<<<<< HEAD
         mIccCard.set(UiccController.getInstance(this).getIccCard());
         mIccRecords = mIccCard.get().getIccRecords();
         // CdmaLteServiceStateTracker registers with IccCard to know
         // when the card is ready. So create mIccCard before the ServiceStateTracker
         mSST = new CdmaLteServiceStateTracker(this);
-=======
-        mSST = new CdmaLteServiceStateTracker(this);
-        mIccRecords = new CdmaLteUiccRecords(this);
-        mIccCard = new SimCard(this, LOG_TAG, DBG);
-        mIccFileHandler = new CdmaLteUiccFileHandler(this);
->>>>>>> parent of fc2cbe9... Separate SIM states from Radio states
     }
 
     @Override

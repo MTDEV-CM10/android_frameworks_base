@@ -89,13 +89,7 @@ public final class RuimRecords extends IccRecords {
         // recordsToLoad is set to 0 because no requests are made yet
         recordsToLoad = 0;
 
-<<<<<<< HEAD
         mCi.registerForOffOrNotAvailable(this, EVENT_RADIO_OFF_OR_NOT_AVAILABLE, null);
-=======
-
-        p.mCM.registerForRUIMReady(this, EVENT_RUIM_READY, null);
-        p.mCM.registerForOffOrNotAvailable(this, EVENT_RADIO_OFF_OR_NOT_AVAILABLE, null);
->>>>>>> parent of fc2cbe9... Separate SIM states from Radio states
         // NOTE the EVENT_SMS_ON_RUIM is not registered
         mCi.registerForIccRefresh(this, EVENT_RUIM_REFRESH, null);
 
@@ -108,20 +102,14 @@ public final class RuimRecords extends IccRecords {
     public void dispose() {
         if (DBG) log("Disposing RuimRecords " + this);
         //Unregister for all events
-<<<<<<< HEAD
         mCi.unregisterForOffOrNotAvailable( this);
         mCi.unregisterForIccRefresh(this);
         super.dispose();
-=======
-        phone.mCM.unregisterForRUIMReady(this);
-        phone.mCM.unregisterForOffOrNotAvailable( this);
-        phone.mCM.unregisterForIccRefresh(this);
->>>>>>> parent of fc2cbe9... Separate SIM states from Radio states
     }
 
     @Override
     protected void finalize() {
-        if(DBG) Log.d(LOG_TAG, "RuimRecords finalized");
+        if(DBG) log("RuimRecords finalized");
     }
 
     @Override
@@ -163,7 +151,7 @@ public final class RuimRecords extends IccRecords {
         AsyncResult.forMessage((onComplete)).exception =
                 new IccException("setVoiceMailNumber not implemented");
         onComplete.sendToTarget();
-        Log.e(LOG_TAG, "method setVoiceMailNumber is not implemented");
+        loge("method setVoiceMailNumber is not implemented");
     }
 
     /**
@@ -211,22 +199,19 @@ public final class RuimRecords extends IccRecords {
 
         boolean isRecordLoadResponse = false;
 
-<<<<<<< HEAD
         if (mDestroyed) {
             loge("Received message " + msg +
                     "[" + msg.what + "] while being destroyed. Ignoring.");
             return;
         }
 
-=======
->>>>>>> parent of fc2cbe9... Separate SIM states from Radio states
         try { switch (msg.what) {
             case EVENT_RADIO_OFF_OR_NOT_AVAILABLE:
                 onRadioOffOrNotAvailable();
             break;
 
             case EVENT_GET_DEVICE_IDENTITY_DONE:
-                Log.d(LOG_TAG, "Event EVENT_GET_DEVICE_IDENTITY_DONE Received");
+                log("Event EVENT_GET_DEVICE_IDENTITY_DONE Received");
             break;
 
             /* IO events */
@@ -235,7 +220,7 @@ public final class RuimRecords extends IccRecords {
 
                 ar = (AsyncResult)msg.obj;
                 if (ar.exception != null) {
-                    Log.e(LOG_TAG, "Exception querying IMSI, Exception:" + ar.exception);
+                    loge("Exception querying IMSI, Exception:" + ar.exception);
                     break;
                 }
 
@@ -244,11 +229,11 @@ public final class RuimRecords extends IccRecords {
                 // IMSI (MCC+MNC+MSIN) is at least 6 digits, but not more
                 // than 15 (and usually 15).
                 if (mImsi != null && (mImsi.length() < 6 || mImsi.length() > 15)) {
-                    Log.e(LOG_TAG, "invalid IMSI " + mImsi);
+                    loge("invalid IMSI " + mImsi);
                     mImsi = null;
                 }
 
-                Log.d(LOG_TAG, "IMSI: " + mImsi.substring(0, 6) + "xxxxxxxxx");
+                log("IMSI: " + mImsi.substring(0, 6) + "xxxxxxxxx");
 
                 String operatorNumeric = getRUIMOperatorNumeric();
                 if (operatorNumeric != null) {
@@ -269,7 +254,7 @@ public final class RuimRecords extends IccRecords {
                 mMin2Min1 = localTemp[3];
                 mPrlVersion = localTemp[4];
 
-                Log.d(LOG_TAG, "MDN: " + mMyMobileNumber + " MIN: " + mMin2Min1);
+                log("MDN: " + mMyMobileNumber + " MIN: " + mMin2Min1);
 
             break;
 
@@ -285,7 +270,7 @@ public final class RuimRecords extends IccRecords {
 
                 iccid = IccUtils.bcdToString(data, 0, data.length);
 
-                Log.d(LOG_TAG, "iccid: " + iccid);
+                log("iccid: " + iccid);
 
             break;
 
@@ -305,7 +290,7 @@ public final class RuimRecords extends IccRecords {
 
             // TODO: probably EF_CST should be read instead
             case EVENT_GET_SST_DONE:
-                Log.d(LOG_TAG, "Event EVENT_GET_SST_DONE Received");
+                log("Event EVENT_GET_SST_DONE Received");
             break;
 
             case EVENT_RUIM_REFRESH:
@@ -337,18 +322,13 @@ public final class RuimRecords extends IccRecords {
         if (recordsToLoad == 0 && recordsRequested == true) {
             onAllRecordsLoaded();
         } else if (recordsToLoad < 0) {
-            Log.e(LOG_TAG, "RuimRecords: recordsToLoad <0, programmer error suspected");
+            loge("RuimRecords: recordsToLoad <0, programmer error suspected");
             recordsToLoad = 0;
         }
     }
 
     @Override
     protected void onAllRecordsLoaded() {
-<<<<<<< HEAD
-=======
-        Log.d(LOG_TAG, "RuimRecords: record load complete");
-
->>>>>>> parent of fc2cbe9... Separate SIM states from Radio states
         // Further records that can be inserted are Operator/OEM dependent
 
         String operator = getRUIMOperatorNumeric();

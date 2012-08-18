@@ -105,14 +105,11 @@ public abstract class PhoneBase extends Handler implements Phone {
     protected static final int EVENT_SET_ENHANCED_VP                = 24;
     protected static final int EVENT_EMERGENCY_CALLBACK_MODE_ENTER  = 25;
     protected static final int EVENT_EXIT_EMERGENCY_CALLBACK_RESPONSE = 26;
-<<<<<<< HEAD
     protected static final int EVENT_CDMA_SUBSCRIPTION_SOURCE_CHANGED = 27;
     // other
     protected static final int EVENT_SET_NETWORK_AUTOMATIC          = 28;
     protected static final int EVENT_NEW_ICC_SMS                    = 29;
     protected static final int EVENT_ICC_RECORD_EVENTS              = 30;
-=======
->>>>>>> parent of fc2cbe9... Separate SIM states from Radio states
 
     // Key used to read/write current CLIR setting
     public static final String CLIR_KEY = "clir_key";
@@ -271,13 +268,10 @@ public abstract class PhoneBase extends Handler implements Phone {
     public void removeReferences() {
         mSmsStorageMonitor = null;
         mSmsUsageMonitor = null;
-<<<<<<< HEAD
         mSMS = null;
         mIccRecords = null;
         mIccCard.set(null);
         mDataConnectionTracker = null;
-=======
->>>>>>> parent of fc2cbe9... Separate SIM states from Radio states
     }
 
     /**

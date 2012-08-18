@@ -418,12 +418,9 @@ class SipCommandInterface extends BaseCommands implements CommandsInterface {
 
     public void requestIsimAuthentication(String nonce, Message response) {
     }
-<<<<<<< HEAD
 
     public void getVoiceRadioTechnology(Message result) {
     }
 
     public boolean needsOldRilFeature(String feature) { return false; }
-=======
->>>>>>> parent of fc2cbe9... Separate SIM states from Radio states
 }

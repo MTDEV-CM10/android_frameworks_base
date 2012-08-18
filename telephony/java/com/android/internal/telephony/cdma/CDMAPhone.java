@@ -98,15 +98,14 @@ public class CDMAPhone extends PhoneBase {
     // Instance Variables
     CdmaCallTracker mCT;
     CdmaServiceStateTracker mSST;
+    CdmaSubscriptionSourceManager mCdmaSSM;
     ArrayList <CdmaMmiCode> mPendingMmis = new ArrayList<CdmaMmiCode>();
     RuimPhoneBookInterfaceManager mRuimPhoneBookInterfaceManager;
     RuimSmsInterfaceManager mRuimSmsInterfaceManager;
+    int mCdmaSubscriptionSource = CdmaSubscriptionSourceManager.SUBSCRIPTION_SOURCE_UNKNOWN;
     PhoneSubInfo mSubInfo;
     EriManager mEriManager;
     WakeLock mWakeLock;
-
-    // mNvLoadedRegistrants are informed after the EVENT_NV_READY
-    private final RegistrantList mNvLoadedRegistrants = new RegistrantList();
 
     // mEriFileLoadedRegistrants are informed after the ERI text has been loaded
     private final RegistrantList mEriFileLoadedRegistrants = new RegistrantList();
@@ -153,23 +152,18 @@ public class CDMAPhone extends PhoneBase {
     }
 
     protected void initSstIcc() {
-<<<<<<< HEAD
         mIccCard.set(UiccController.getInstance(this).getIccCard());
         mIccRecords = mIccCard.get().getIccRecords();
         // CdmaServiceStateTracker registers with IccCard to know
         // when the Ruim card is ready. So create mIccCard before the ServiceStateTracker
         mSST = new CdmaServiceStateTracker(this);
-=======
-        mSST = new CdmaServiceStateTracker(this);
-        mIccRecords = new RuimRecords(this);
-        mIccCard = new RuimCard(this, LOG_TAG, DBG);
-        mIccFileHandler = new RuimFileHandler(this);
->>>>>>> parent of fc2cbe9... Separate SIM states from Radio states
     }
 
     protected void init(Context context, PhoneNotifier notifier) {
         mCM.setPhoneType(Phone.PHONE_TYPE_CDMA);
         mCT = new CdmaCallTracker(this);
+        mCdmaSSM = CdmaSubscriptionSourceManager.getInstance(context, mCM, this,
+                EVENT_CDMA_SUBSCRIPTION_SOURCE_CHANGED, null);
         mSMS = new CdmaSMSDispatcher(this, mSmsStorageMonitor, mSmsUsageMonitor);
         mDataConnectionTracker = new CdmaDataConnectionTracker (this);
         mRuimPhoneBookInterfaceManager = new RuimPhoneBookInterfaceManager(this);
@@ -183,7 +177,6 @@ public class CDMAPhone extends PhoneBase {
         mCM.registerForOn(this, EVENT_RADIO_ON, null);
         mCM.setOnSuppServiceNotification(this, EVENT_SSN, null);
         mSST.registerForNetworkAttached(this, EVENT_REGISTERED_TO_NETWORK, null);
-        mCM.registerForNVReady(this, EVENT_NV_READY, null);
         mCM.setEmergencyCallbackMode(this, EVENT_EMERGENCY_CALLBACK_MODE_ENTER, null);
 
         PowerManager pm
@@ -237,7 +230,6 @@ public class CDMAPhone extends PhoneBase {
             mCM.unregisterForAvailable(this); //EVENT_RADIO_AVAILABLE
             mCM.unregisterForOffOrNotAvailable(this); //EVENT_RADIO_OFF_OR_NOT_AVAILABLE
             mCM.unregisterForOn(this); //EVENT_RADIO_ON
-            mCM.unregisterForNVReady(this); //EVENT_NV_READY
             mSST.unregisterForNetworkAttached(this); //EVENT_REGISTERED_TO_NETWORK
             mCM.unSetOnSuppServiceNotification(this);
             removeCallbacks(mExitEcmRunnable);
@@ -248,6 +240,7 @@ public class CDMAPhone extends PhoneBase {
             mCT.dispose();
             mDataConnectionTracker.dispose();
             mSST.dispose();
+            mCdmaSSM.dispose(this);
             mSMS.dispose();
             mRuimPhoneBookInterfaceManager.dispose();
             mRuimSmsInterfaceManager.dispose();
@@ -261,15 +254,7 @@ public class CDMAPhone extends PhoneBase {
         log("removeReferences");
         mRuimPhoneBookInterfaceManager = null;
         mRuimSmsInterfaceManager = null;
-        mSMS = null;
         mSubInfo = null;
-<<<<<<< HEAD
-=======
-        mIccRecords = null;
-        mIccFileHandler = null;
-        mIccCard = null;
-        mDataConnectionTracker = null;
->>>>>>> parent of fc2cbe9... Separate SIM states from Radio states
         mCT = null;
         mSST = null;
         mEriManager = null;
@@ -1033,6 +1018,13 @@ public class CDMAPhone extends PhoneBase {
 
             case EVENT_RADIO_ON:{
                 Log.d(LOG_TAG, "Event EVENT_RADIO_ON Received");
+                handleCdmaSubscriptionSource(mCdmaSSM.getCdmaSubscriptionSource());
+            }
+            break;
+
+            case EVENT_CDMA_SUBSCRIPTION_SOURCE_CHANGED:{
+                Log.d(LOG_TAG, "EVENT_CDMA_SUBSCRIPTION_SOURCE_CHANGED");
+                handleCdmaSubscriptionSource(mCdmaSSM.getCdmaSubscriptionSource());
             }
             break;
 
@@ -1048,8 +1040,6 @@ public class CDMAPhone extends PhoneBase {
 
             case EVENT_NV_READY:{
                 Log.d(LOG_TAG, "Event EVENT_NV_READY Received");
-                //Inform the Service State Tracker
-                mNvLoadedRegistrants.notifyRegistrants();
                 prepareEri();
             }
             break;
@@ -1087,7 +1077,6 @@ public class CDMAPhone extends PhoneBase {
     }
 
     /**
-<<<<<<< HEAD
      * Handles the call to get the subscription source
      *
      * @param newSubscriptionSource holds the new CDMA subscription source value
@@ -1103,8 +1092,6 @@ public class CDMAPhone extends PhoneBase {
     }
 
     /**
-=======
->>>>>>> parent of fc2cbe9... Separate SIM states from Radio states
      * Retrieves the PhoneSubInfo of the CDMAPhone
      */
     public PhoneSubInfo getPhoneSubInfo() {
@@ -1123,15 +1110,6 @@ public class CDMAPhone extends PhoneBase {
      */
     public IccPhoneBookInterfaceManager getIccPhoneBookInterfaceManager() {
         return mRuimPhoneBookInterfaceManager;
-    }
-
-    public void registerForNvLoaded(Handler h, int what, Object obj) {
-        Registrant r = new Registrant (h, what, obj);
-        mNvLoadedRegistrants.add(r);
-    }
-
-    public void unregisterForNvLoaded(Handler h) {
-        mNvLoadedRegistrants.remove(h);
     }
 
     public void registerForEriFileLoaded(Handler h, int what, Object obj) {
