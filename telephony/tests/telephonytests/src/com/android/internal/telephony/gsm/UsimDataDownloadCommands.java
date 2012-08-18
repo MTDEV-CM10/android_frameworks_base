@@ -608,6 +608,7 @@ class UsimDataDownloadCommands extends BaseCommands {
     @Override
     public void requestIsimAuthentication(String nonce, Message response) {
     }
+<<<<<<< HEAD
 
     @Override
     public void getVoiceRadioTechnology(Message response) {
@@ -624,4 +625,6 @@ class UsimDataDownloadCommands extends BaseCommands {
 
     @Override
     public boolean needsOldRilFeature(String feature) { return false; }
+=======
+>>>>>>> parent of fc2cbe9... Separate SIM states from Radio states
 }

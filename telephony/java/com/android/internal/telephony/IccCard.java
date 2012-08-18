@@ -36,6 +36,7 @@ import com.android.internal.telephony.PhoneBase;
 import com.android.internal.telephony.CommandsInterface.RadioState;
 import com.android.internal.telephony.gsm.SIMFileHandler;
 import com.android.internal.telephony.gsm.SIMRecords;
+<<<<<<< HEAD
 import com.android.internal.telephony.cat.CatService;
 import com.android.internal.telephony.cdma.CDMALTEPhone;
 import com.android.internal.telephony.cdma.CdmaLteUiccFileHandler;
@@ -43,6 +44,8 @@ import com.android.internal.telephony.cdma.CdmaLteUiccRecords;
 import com.android.internal.telephony.cdma.CdmaSubscriptionSourceManager;
 import com.android.internal.telephony.cdma.RuimFileHandler;
 import com.android.internal.telephony.cdma.RuimRecords;
+=======
+>>>>>>> parent of fc2cbe9... Separate SIM states from Radio states
 
 import android.os.SystemProperties;
 
@@ -57,11 +60,6 @@ public class IccCard {
 
     protected IccCardStatus mIccCardStatus = null;
     protected State mState = null;
-    private final Object mStateMonitor = new Object();
-
-    protected boolean is3gpp = true;
-    protected boolean isSubscriptionFromIccCard = true;
-    protected CdmaSubscriptionSourceManager mCdmaSSM = null;
     protected PhoneBase mPhone;
     private IccRecords mIccRecords;
     private IccFileHandler mIccFileHandler;
@@ -70,8 +68,6 @@ public class IccCard {
     private RegistrantList mAbsentRegistrants = new RegistrantList();
     private RegistrantList mPinLockedRegistrants = new RegistrantList();
     private RegistrantList mNetworkLockedRegistrants = new RegistrantList();
-    protected RegistrantList mReadyRegistrants = new RegistrantList();
-    protected RegistrantList mRuimReadyRegistrants = new RegistrantList();
 
     private boolean mDesiredPinLocked;
     private boolean mDesiredFdnEnabled;
@@ -110,7 +106,7 @@ public class IccCard {
     static public final String INTENT_VALUE_ABSENT_ON_PERM_DISABLED = "PERM_DISABLED";
 
 
-    protected static final int EVENT_ICC_LOCKED = 1;
+    protected static final int EVENT_ICC_LOCKED_OR_ABSENT = 1;
     private static final int EVENT_GET_ICC_STATUS_DONE = 2;
     protected static final int EVENT_RADIO_OFF_OR_NOT_AVAILABLE = 3;
     private static final int EVENT_PINPUK_DONE = 4;
@@ -124,8 +120,6 @@ public class IccCard {
     private static final int EVENT_ICC_STATUS_CHANGED = 12;
     private static final int EVENT_CARD_REMOVED = 13;
     private static final int EVENT_CARD_ADDED = 14;
-    protected static final int EVENT_CDMA_SUBSCRIPTION_SOURCE_CHANGED = 15;
-    protected static final int EVENT_RADIO_ON = 16;
 
     /*
       UNKNOWN is a transient state, for example, after uesr inputs ICC pin under
@@ -162,18 +156,25 @@ public class IccCard {
                  */
                 case RADIO_OFF:
                 case RADIO_UNAVAILABLE:
+                case SIM_NOT_READY:
+                case RUIM_NOT_READY:
                     return State.UNKNOWN;
-                default:
-                    if (!is3gpp && !isSubscriptionFromIccCard) {
-                        // CDMA can get subscription from NV. In that case,
-                        // subscription is ready as soon as Radio is ON.
-                        return State.READY;
-                    }
+                case SIM_LOCKED_OR_ABSENT:
+                case RUIM_LOCKED_OR_ABSENT:
+                    //this should be transient-only
+                    return State.UNKNOWN;
+                case SIM_READY:
+                case RUIM_READY:
+                case NV_READY:
+                    return State.READY;
+                case NV_NOT_READY:
+                    return State.ABSENT;
             }
         } else {
             return mState;
         }
 
+        Log.e(mLogTag, "IccCard.getState(): case should never be reached");
         return State.UNKNOWN;
     }
 
@@ -182,6 +183,7 @@ public class IccCard {
         mDbg = dbg;
         if (mDbg) log("[IccCard] Creating card type " + (is3gpp ? "3gpp" : "3gpp2"));
         mPhone = phone;
+<<<<<<< HEAD
         this.is3gpp = is3gpp;
         mCdmaSSM = CdmaSubscriptionSourceManager.getInstance(mPhone.getContext(),
                 mPhone.mCM, mHandler, EVENT_CDMA_SUBSCRIPTION_SOURCE_CHANGED, null);
@@ -200,18 +202,23 @@ public class IccCard {
                 mPhone.mContext, mIccFileHandler, this);
         mPhone.mCM.registerForOffOrNotAvailable(mHandler, EVENT_RADIO_OFF_OR_NOT_AVAILABLE, null);
         mPhone.mCM.registerForOn(mHandler, EVENT_RADIO_ON, null);
+=======
+>>>>>>> parent of fc2cbe9... Separate SIM states from Radio states
         mPhone.mCM.registerForIccStatusChanged(mHandler, EVENT_ICC_STATUS_CHANGED, null);
     }
 
     public void dispose() {
         if (mDbg) log("[IccCard] Disposing card type " + (is3gpp ? "3gpp" : "3gpp2"));
         mPhone.mCM.unregisterForIccStatusChanged(mHandler);
+<<<<<<< HEAD
         mPhone.mCM.unregisterForOffOrNotAvailable(mHandler);
         mPhone.mCM.unregisterForOn(mHandler);
         mCatService.dispose();
         mCdmaSSM.dispose(mHandler);
         mIccRecords.dispose();
         mIccFileHandler.dispose();
+=======
+>>>>>>> parent of fc2cbe9... Separate SIM states from Radio states
     }
 
     protected void finalize() {
@@ -277,49 +284,6 @@ public class IccCard {
         mPinLockedRegistrants.remove(h);
     }
 
-    public void registerForReady(Handler h, int what, Object obj) {
-        Registrant r = new Registrant (h, what, obj);
-
-        synchronized (mStateMonitor) {
-            mReadyRegistrants.add(r);
-
-            if (getState() == State.READY) {
-                r.notifyRegistrant(new AsyncResult(null, null, null));
-            }
-        }
-    }
-
-    public void unregisterForReady(Handler h) {
-        synchronized (mStateMonitor) {
-            mReadyRegistrants.remove(h);
-        }
-    }
-
-    public State getRuimState() {
-        if(mIccCardStatus != null) {
-            return getAppState(mIccCardStatus.getCdmaSubscriptionAppIndex());
-        } else {
-            return State.UNKNOWN;
-        }
-    }
-
-    public void registerForRuimReady(Handler h, int what, Object obj) {
-        Registrant r = new Registrant (h, what, obj);
-
-        synchronized (mStateMonitor) {
-            mRuimReadyRegistrants.add(r);
-
-            if (getState() == State.READY && getRuimState() == State.READY ) {
-                r.notifyRegistrant(new AsyncResult(null, null, null));
-            }
-        }
-    }
-
-    public void unregisterForRuimReady(Handler h) {
-        synchronized (mStateMonitor) {
-            mRuimReadyRegistrants.remove(h);
-        }
-    }
 
     /**
      * Supply the ICC PIN to the ICC
@@ -519,25 +483,13 @@ public class IccCard {
         boolean isIccCardAdded;
 
         State oldState, newState;
-        State oldRuimState = getRuimState();
 
         oldState = mState;
         mIccCardStatus = newCardStatus;
         newState = getIccCardState();
+        mState = newState;
 
-        synchronized (mStateMonitor) {
-            mState = newState;
-            updateStateProperty();
-            if (oldState != State.READY && newState == State.READY) {
-                mHandler.sendMessage(mHandler.obtainMessage(EVENT_ICC_READY));
-                mReadyRegistrants.notifyRegistrants();
-            } else if (newState.isPinLocked()) {
-                mHandler.sendMessage(mHandler.obtainMessage(EVENT_ICC_LOCKED));
-            }
-            if (oldRuimState != State.READY && getRuimState() == State.READY) {
-                mRuimReadyRegistrants.notifyRegistrants();
-            }
-        }
+        updateStateProperty();
 
         transitionedIntoPinLocked = (
                  (oldState != State.PIN_REQUIRED && newState == State.PIN_REQUIRED)
@@ -703,30 +655,22 @@ public class IccCard {
                     updateStateProperty();
                     broadcastIccStateChangedIntent(INTENT_VALUE_ICC_NOT_READY, null);
                     break;
-                case EVENT_RADIO_ON:
-                    if (!is3gpp) {
-                        handleCdmaSubscriptionSource();
-                    }
-                    mPhone.mCM.getIccCardStatus(obtainMessage(EVENT_GET_ICC_STATUS_DONE));
-                    break;
-                case EVENT_CDMA_SUBSCRIPTION_SOURCE_CHANGED:
-                    handleCdmaSubscriptionSource();
-                    break;
                 case EVENT_ICC_READY:
-                    if(isSubscriptionFromIccCard) {
-                        mPhone.mCM.queryFacilityLock (
-                                CommandsInterface.CB_FACILITY_BA_SIM, "", serviceClassX,
-                                obtainMessage(EVENT_QUERY_FACILITY_LOCK_DONE));
-                        mPhone.mCM.queryFacilityLock (
-                                CommandsInterface.CB_FACILITY_BA_FD, "", serviceClassX,
-                                obtainMessage(EVENT_QUERY_FACILITY_FDN_DONE));
-                    }
-                    break;
-                case EVENT_ICC_LOCKED:
+                    //TODO: put facility read in SIM_READY now, maybe in REG_NW
+                    mPhone.mCM.getIccCardStatus(obtainMessage(EVENT_GET_ICC_STATUS_DONE));
                     mPhone.mCM.queryFacilityLock (
-                             CommandsInterface.CB_FACILITY_BA_SIM, "", serviceClassX,
-                             obtainMessage(EVENT_QUERY_FACILITY_LOCK_DONE));
-                     break;
+                            CommandsInterface.CB_FACILITY_BA_SIM, "", serviceClassX,
+                            obtainMessage(EVENT_QUERY_FACILITY_LOCK_DONE));
+                    mPhone.mCM.queryFacilityLock (
+                            CommandsInterface.CB_FACILITY_BA_FD, "", serviceClassX,
+                            obtainMessage(EVENT_QUERY_FACILITY_FDN_DONE));
+                    break;
+                case EVENT_ICC_LOCKED_OR_ABSENT:
+                    mPhone.mCM.getIccCardStatus(obtainMessage(EVENT_GET_ICC_STATUS_DONE));
+                    mPhone.mCM.queryFacilityLock (
+                            CommandsInterface.CB_FACILITY_BA_SIM, "", serviceClassX,
+                            obtainMessage(EVENT_QUERY_FACILITY_LOCK_DONE));
+                    break;
                 case EVENT_GET_ICC_STATUS_DONE:
                     ar = (AsyncResult)msg.obj;
 
@@ -816,30 +760,7 @@ public class IccCard {
         }
     };
 
-    private void handleCdmaSubscriptionSource() {
-        if(mCdmaSSM != null)  {
-            int newSubscriptionSource = mCdmaSSM.getCdmaSubscriptionSource();
-
-            Log.d(mLogTag, "Received Cdma subscription source: " + newSubscriptionSource);
-
-            boolean isNewSubFromRuim =
-                (newSubscriptionSource == CdmaSubscriptionSourceManager.SUBSCRIPTION_FROM_RUIM);
-
-            if (isNewSubFromRuim != isSubscriptionFromIccCard) {
-                isSubscriptionFromIccCard = isNewSubFromRuim;
-                // Parse the Stored IccCardStatus Message to set mState correctly.
-                handleIccCardStatus(mIccCardStatus);
-            }
-        }
-    }
-
     public State getIccCardState() {
-        if(!is3gpp && !isSubscriptionFromIccCard) {
-            // CDMA can get subscription from NV. In that case,
-            // subscription is ready as soon as Radio is ON.
-            return State.READY;
-        }
-
         if (mIccCardStatus == null) {
             Log.e(mLogTag, "[IccCard] IccCardStatus is null");
             return IccCard.State.ABSENT;
@@ -853,11 +774,19 @@ public class IccCard {
         RadioState currentRadioState = mPhone.mCM.getRadioState();
         // check radio technology
         if( currentRadioState == RadioState.RADIO_OFF         ||
-            currentRadioState == RadioState.RADIO_UNAVAILABLE) {
+            currentRadioState == RadioState.RADIO_UNAVAILABLE ||
+            currentRadioState == RadioState.SIM_NOT_READY     ||
+            currentRadioState == RadioState.RUIM_NOT_READY    ||
+            currentRadioState == RadioState.NV_NOT_READY      ||
+            currentRadioState == RadioState.NV_READY) {
             return IccCard.State.NOT_READY;
         }
 
-        if( currentRadioState == RadioState.RADIO_ON ) {
+        if( currentRadioState == RadioState.SIM_LOCKED_OR_ABSENT  ||
+            currentRadioState == RadioState.SIM_READY             ||
+            currentRadioState == RadioState.RUIM_LOCKED_OR_ABSENT ||
+            currentRadioState == RadioState.RUIM_READY) {
+
             State csimState =
                 getAppState(mIccCardStatus.getCdmaSubscriptionAppIndex());
             State usimState =
@@ -872,7 +801,8 @@ public class IccCard {
             }
 
             // check for CDMA radio technology
-            if (!is3gpp) {
+            if (currentRadioState == RadioState.RUIM_LOCKED_OR_ABSENT ||
+                currentRadioState == RadioState.RUIM_READY) {
                 return csimState;
             }
             return usimState;

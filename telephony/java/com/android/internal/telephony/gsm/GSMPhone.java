@@ -139,12 +139,16 @@ public class GSMPhone extends PhoneBase {
         }
 
         mCM.setPhoneType(Phone.PHONE_TYPE_GSM);
+<<<<<<< HEAD
         mIccCard.set(UiccController.getInstance(this).getIccCard());
         mIccRecords = mIccCard.get().getIccRecords();
+=======
+>>>>>>> parent of fc2cbe9... Separate SIM states from Radio states
         mCT = new GsmCallTracker(this);
         mSST = new GsmServiceStateTracker (this);
         mSMS = new GsmSMSDispatcher(this, mSmsStorageMonitor, mSmsUsageMonitor);
         mDataConnectionTracker = new GsmDataConnectionTracker (this);
+        mIccCard = new SimCard(this);
         if (!unitTestMode) {
             mSimPhoneBookIntManager = new SimPhoneBookInterfaceManager(this);
             mSimSmsIntManager = new SimSmsInterfaceManager(this, mSMS);
@@ -230,7 +234,15 @@ public class GSMPhone extends PhoneBase {
         mSimulatedRadioControl = null;
         mSimPhoneBookIntManager = null;
         mSimSmsIntManager = null;
+        mSMS = null;
         mSubInfo = null;
+<<<<<<< HEAD
+=======
+        mIccRecords = null;
+        mIccFileHandler = null;
+        mIccCard = null;
+        mDataConnectionTracker = null;
+>>>>>>> parent of fc2cbe9... Separate SIM states from Radio states
         mCT = null;
         mSST = null;
         super.removeReferences();

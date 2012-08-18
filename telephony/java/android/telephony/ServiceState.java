@@ -99,12 +99,16 @@ public class ServiceState implements Parcelable {
     /** @hide */
     public static final int RIL_RADIO_TECHNOLOGY_LTE = 14;
     /** @hide */
+<<<<<<< HEAD
     public static final int RIL_RADIO_TECHNOLOGY_HSPAP = 15;
     /**
      * GSM radio technology only supports voice. It does not support data.
      * @hide
      */
     public static final int RIL_RADIO_TECHNOLOGY_GSM = 16;
+=======
+    public static final int RADIO_TECHNOLOGY_HSPAP = 15;
+>>>>>>> parent of fc2cbe9... Separate SIM states from Radio states
 
     /**
      * Available registration states for GSM, UMTS and CDMA.
@@ -455,9 +459,12 @@ public class ServiceState implements Parcelable {
             case RIL_RADIO_TECHNOLOGY_HSPAP:
                 rtString = "HSPAP";
                 break;
+<<<<<<< HEAD
             case RIL_RADIO_TECHNOLOGY_GSM:
                 rtString = "GSM";
                 break;
+=======
+>>>>>>> parent of fc2cbe9... Separate SIM states from Radio states
             default:
                 rtString = "Unexpected";
                 Log.w(LOG_TAG, "Unexpected radioTechnology=" + rt);
@@ -706,6 +713,7 @@ public class ServiceState implements Parcelable {
     public int getSystemId() {
         return this.mSystemId;
     }
+<<<<<<< HEAD
 
     /** @hide */
     public static boolean isGsm(int radioTechnology) {
@@ -730,4 +738,6 @@ public class ServiceState implements Parcelable {
                 || radioTechnology == RIL_RADIO_TECHNOLOGY_EVDO_B
                 || radioTechnology == RIL_RADIO_TECHNOLOGY_EHRPD;
     }
+=======
+>>>>>>> parent of fc2cbe9... Separate SIM states from Radio states
 }
