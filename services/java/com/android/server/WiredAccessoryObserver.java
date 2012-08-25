@@ -124,7 +124,7 @@ class WiredAccessoryObserver extends UEventObserver {
         UEventInfo uei;
 
         // Monitor h2w
-        uei = new UEventInfo("h2w", BIT_HEADSET, BIT_HEADSET_NO_MIC);
+        uei = new UEventInfo("headset_sensor", BIT_HEADSET, BIT_HEADSET_NO_MIC);
         if (uei.checkSwitchExists()) {
             retVal.add(uei);
         } else {
